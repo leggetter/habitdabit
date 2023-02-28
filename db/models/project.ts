@@ -1,5 +1,4 @@
 import { Field, PrimaryKey, TigrisCollection, TigrisDataTypes } from "@tigrisdata/core";
-import { User } from "./user";
 
 @TigrisCollection("projects")
 export class Project {
@@ -16,7 +15,7 @@ export class Project {
   ownerId!: number;
 
   @Field(TigrisDataTypes.ARRAY, { elements: TigrisDataTypes.INT32 })
-  adminIds: Array<Number> = new Array<Number>();
+  adminIds!: Array<number>;
 
   @Field(TigrisDataTypes.INT32)
   championId!: number;

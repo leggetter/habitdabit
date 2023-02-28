@@ -1,26 +1,19 @@
-import {
-  Box,
-  Button,
-  FormControl,
-  FormErrorMessage,
-  FormHelperText,
-  FormLabel,
-  Heading,
-  Input,
-  Textarea,
-  VStack,
-} from "@chakra-ui/react";
+import { Heading } from "@chakra-ui/react";
 import { useSession } from "next-auth/react";
 import AccessDenied from "../../../components/access-denied";
 import Layout from "../../../components/layout";
-import { Field, Form, Formik, FormikHelpers } from "formik";
-import { CreateProjectValues } from "../../../lib/project-helpers";
 import { useRouter } from "next/router";
+import ProjectForm from "../../../components/projects/project-form";
 import { Project } from "../../../db/models/project";
+import { ProjectValues } from "../../../lib/project-helpers";
 
 export default function CreateProject() {
   const { data: session } = useSession();
   const router = useRouter();
+
+  const handleSubmissionComplete = (project: Project) => {
+    router.push(`/dashboard/projects/${project.id}`);
+  };
 
   if (!session) {
     return (
@@ -34,87 +27,12 @@ export default function CreateProject() {
     <Layout>
       <Heading as="h1">Create Project</Heading>
 
-      <Box as="section" mt={10}>
-        <VStack maxW={600} spacing={5} align="stretch">
-          <Formik
-            initialValues={{
-              name: "",
-              goal: "",
-              owner: session.user.email,
-              champion: "",
-            }}
-            onSubmit={async (
-              values: CreateProjectValues,
-              { setSubmitting }: FormikHelpers<CreateProjectValues>
-            ) => {
-              const params: RequestInit = {
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                method: "POST",
-                body: JSON.stringify(values),
-              };
-
-              const response = await fetch("/api/v1/projects", params);
-              const body = (await response.json()) as Project;
-
-              setSubmitting(false);
-
-              router.push(`/dashboard/projects/${body.id}`);
-            }}
-          >
-            <Form>
-              <Field id="name" name="name">
-                {({ field, form }: { field: any; form: any }) => (
-                  <FormControl isRequired mb={5}>
-                    <FormLabel>Name</FormLabel>
-                    <Input {...field} type="text" />
-                    <FormErrorMessage>{form.errors.name}</FormErrorMessage>
-                  </FormControl>
-                )}
-              </Field>
-
-              <Field id="goal" name="goal">
-                {({ field, form }: { field: any; form: any }) => (
-                  <FormControl id="goal" isRequired mb={5}>
-                    <FormLabel>Goal</FormLabel>
-                    <Textarea {...field} />
-                    <FormErrorMessage>{form.errors.goal}</FormErrorMessage>
-                  </FormControl>
-                )}
-              </Field>
-
-              <Field id="owner" name="owner">
-                {({ field, form }: { field: any; form: any }) => (
-                  <FormControl isRequired mb={5}>
-                    <FormLabel>Owner</FormLabel>
-                    <Input {...field} type="email" isReadOnly />
-                    <FormHelperText>
-                      The person who creates the Project is the owner.
-                    </FormHelperText>
-                  </FormControl>
-                )}
-              </Field>
-
-              <Field id="champion" name="champion">
-                {({ field, form }: { field: any; form: any }) => (
-                  <FormControl id="champion" isRequired mb={5}>
-                    <FormLabel>Champion</FormLabel>
-                    <Input {...field} type="email" />
-                    <FormErrorMessage>{form.errors.champion}</FormErrorMessage>
-                  </FormControl>
-                )}
-              </Field>
-
-              <FormControl textAlign="right">
-                <Button variant="solid" colorScheme="blue" type="submit">
-                  Submit
-                </Button>
-              </FormControl>
-            </Form>
-          </Formik>
-        </VStack>
-      </Box>
+      <ProjectForm
+        method="POST"
+        action="/api/v1/projects"
+        project={new ProjectValues({ owner: session.user.email })}
+        onSubmitComplete={handleSubmissionComplete}
+      />
     </Layout>
   );
 }

@@ -5,18 +5,21 @@ import {
   CardBody,
   CardFooter,
   Heading,
-  Flex,
   Stack,
   Text,
+  SimpleGrid,
 } from "@chakra-ui/react";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/router";
 import HDLinkButton from "../../components/hd-link-button";
 import Layout from "../../components/layout";
+import { Project } from "../../db/models/project";
+import { useProjects } from "../../lib/project-helpers";
 
 const ProjectCard = ({
   id,
   name,
-  goalDescription: description,
+  goalDescription,
   showEditButton,
 }: {
   id: string;
@@ -39,7 +42,7 @@ const ProjectCard = ({
             {name}
           </Heading>
 
-          <Text py="2">{description}</Text>
+          <Text py="2">{goalDescription}</Text>
         </CardBody>
 
         <CardFooter>
@@ -66,9 +69,37 @@ const ProjectCard = ({
   );
 };
 
-export default function Page() {
+const ProjectsList = ({
+  projects,
+  isAdmin,
+}: {
+  projects: Project[];
+  isAdmin: boolean;
+}) => {
+  return (
+    <SimpleGrid columns={3} spacing={5}>
+      {projects.map((project) => {
+        return (
+          <ProjectCard
+            key={project.id}
+            id={project.id!.toString()}
+            name={project.name}
+            goalDescription={project.goalDescription}
+            showEditButton={isAdmin}
+          />
+        );
+      })}
+    </SimpleGrid>
+  );
+};
+
+export default function Dashboard() {
   const { data: session } = useSession();
+  const router = useRouter();
   const isAdmin = session?.user.role === "admin";
+  const { projects, error, isLoading } = useProjects(
+    router.query.search as string
+  );
 
   return (
     <Layout>
@@ -85,24 +116,10 @@ export default function Page() {
           Create
         </HDLinkButton>
 
-        <Flex>
-          <ProjectCard
-            id="1"
-            name={"Max's good habits"}
-            goalDescription={
-              "A set of tasks and activities to promote good habits."
-            }
-            showEditButton={isAdmin}
-          />
-          <ProjectCard
-            id="2"
-            name={"Finn's good habits"}
-            goalDescription={
-              "A set of tasks and activities to promote good habits."
-            }
-            showEditButton={isAdmin}
-          />
-        </Flex>
+        {projects?.length === 0 && <Text>No projects found</Text>}
+        {projects?.length > 0 && (
+          <ProjectsList isAdmin={isAdmin} projects={projects} />
+        )}
       </Box>
     </Layout>
   );

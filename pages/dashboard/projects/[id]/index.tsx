@@ -3,10 +3,9 @@ import { useRouter } from "next/router";
 import Layout from "../../../../components/layout";
 
 import { Table, Tbody, Tr, Td, TableContainer } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
-import { Project } from "../../../../db/models/project";
+import { ProjectValues, useProject } from "../../../../lib/project-helpers";
 
-const ProjectTable = ({ project }: { project: Project }) => {
+const ProjectTable = ({ project }: { project: ProjectValues }) => {
   return (
     <>
       <Heading>Project: {project?.name}</Heading>
@@ -18,23 +17,27 @@ const ProjectTable = ({ project }: { project: Project }) => {
               <Td>
                 <b>Goal</b>
               </Td>
-              <Td>{project?.goalDescription}</Td>
+              <Td>{project?.goal}</Td>
             </Tr>
             <Tr>
               <Td>
                 <b>Champion</b>
               </Td>
-              <Td>{project?.championId}</Td>
+              <Td>{project?.champion}</Td>
+            </Tr>
+            <Tr>
+              <Td>
+                <b>Owner</b>
+              </Td>
+              <Td>{project?.owner}</Td>
             </Tr>
             <Tr>
               <Td>
                 <b>Admins</b>
               </Td>
               <Td>
-                {project?.adminIds.map((adminId) => {
-                  return (
-                    <span key={adminId.toString()}>{adminId.toString()}</span>
-                  );
+                {project?.adminEmails.map((email) => {
+                  return <span key={email}>{email}</span>;
                 })}
               </Td>
             </Tr>
@@ -45,39 +48,10 @@ const ProjectTable = ({ project }: { project: Project }) => {
   );
 };
 
-export default function PostPage() {
+export default function ProjectPage() {
   const router = useRouter();
 
-  const [project, setProject] = useState<Project>();
-  const [isLoading, setLoading] = useState(false);
-  const [error, setError] = useState<string>();
-
-  useEffect(() => {
-    const getProject = async () => {
-      setLoading(true);
-
-      const id = parseInt(router.query.id as string) as number;
-      if (!id) return;
-
-      try {
-        const result = await fetch(`/api/v1/projects/${id}`);
-
-        const projectResult = await result.json();
-        if (projectResult.status === 200) {
-          setProject(projectResult);
-        } else {
-          setError(projectResult.error);
-        }
-      } catch (ex) {
-        console.error(ex);
-        setError("An error occurred when fetching the project information.");
-      }
-
-      setLoading(false);
-    };
-
-    getProject();
-  }, [router]);
+  const { project, error, isLoading } = useProject(router.query.id as string);
 
   return (
     <Layout>
