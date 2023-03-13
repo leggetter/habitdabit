@@ -8,13 +8,14 @@ import { tigrisDb } from "../../../lib/tigris";
 import { Project } from "../../../db/models/project";
 import { User } from "../../../db/models/user";
 import { ProjectValues } from "../../../lib/project-helpers";
-import { FindQuery, LogicalOperator, Status } from "@tigrisdata/core";
+import { FindQuery, LogicalOperator, Status, UpdateQuery } from "@tigrisdata/core";
 
 // Default Req and Res are IncomingMessage and ServerResponse
 // You may want to pass in NextApiRequest and NextApiResponse
 const router = createRouter<NextApiRequest & { params?: { id: number } }, NextApiResponse>();
 
 const projects = tigrisDb.getCollection<Project>(Project);
+const users = tigrisDb.getCollection<User>(User);
 
 router
   .use(async (req, res, next) => {
@@ -53,8 +54,6 @@ router
     }
   })
   .patch("/api/v1/projects/:id", async (req, res: NextApiResponse<Project | { error: string }>) => {
-    // TODO: ensure permissions to edit Project
-
     try {
       const id = req.params!.id;
       const project = await projects.findOne({ filter: { id } });
@@ -63,19 +62,42 @@ router
         res.status(404).json({ error: `A project with id "${id}" could not be found.` });
       }
       else {
-        // You cannot edit the owner or champion (for now)
+        const session = await getServerSession(req, res, authOptions)
+        const owner = await users.findOne({ filter: { id: project.ownerId } });
+
+        if (owner?.email !== session?.user.email) {
+          res.status(403).json({ error: "The logged in user does not have permission to edit the project" });
+          return;
+        }
+        // You cannot edit the owner (for now)
         // so those values are not being changed
         const projectUpdateRequest = req.body as ProjectValues;
-        const result = await projects.updateOne({
+
+        const update: UpdateQuery<Project> = {
           filter: {
             id: project.id,
           },
           fields: {
             name: projectUpdateRequest.name,
             goalDescription: projectUpdateRequest.goal,
-          }
-        });
+            habitsScheduleTemplate: projectUpdateRequest.habitsScheduleTemplate,
+          },
+        };
 
+        // It would be nice to be able to more explicitly edit fields.
+        // Instead we rely on fields being undefined or Arrays being empty
+        // in order for a field not be edited.
+        // if(projectUpdateRequest.name) {
+        //   update.fields.name = projectUpdateRequest.name;
+        // }
+        // if(projectUpdateRequest.goal) {
+        //   update.fields.goalDescription = projectUpdateRequest.goal;
+        // }
+        // if(projectUpdateRequest.habitsScheduleTemplate) {
+        //   update.fields.habitsScheduleTemplate = projectUpdateRequest.habitsScheduleTemplate;
+        // }
+
+        const result = await projects.updateOne(update);
         if (result.status === Status.Updated) {
           res.status(200).json(project);
         }
@@ -122,8 +144,8 @@ router
         projectValues.adminEmails = users.filter(
           u => project.adminIds.includes(u.id!)
         ).map(u => u.email);
+        projectValues.habitsScheduleTemplate = project.habitsScheduleTemplate;
 
-        console.log("projectValues", projectValues);
         res.status(200).json(projectValues);
       }
       else {
@@ -171,7 +193,7 @@ router
 
         champion = await users.insertOne({
           name: "",
-          email: projectCreationRequest.champion,
+          email: projectCreationRequest.champion!,
           createdAt: new Date(),
         });
 
@@ -186,9 +208,9 @@ router
       const creationDate = new Date();
       const projects = tigrisDb.getCollection<Project>(Project);
       const insertedProject = await projects.insertOne({
-        name: projectCreationRequest.name,
+        name: projectCreationRequest.name!,
         championId: champion.id!,
-        goalDescription: projectCreationRequest.goal,
+        goalDescription: projectCreationRequest.goal!,
         ownerId: owner.id!,
         adminIds: [owner.id!],
         startDate: creationDate,

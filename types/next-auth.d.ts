@@ -11,7 +11,9 @@ declare module "next-auth" {
     user: {
       role: "admin" | "user",
       email: string,
-    } & DefaultSession["user"]
+
+    } & DefaultSession["user"];
+    expires: ISODateString;
   }
 }
 

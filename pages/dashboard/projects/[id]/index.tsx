@@ -20,7 +20,7 @@ import HDLinkButton from "../../../../components/hd-link-button";
 const ProjectTable = ({ project }: { project: ProjectValues }) => {
   return (
     <>
-      <Heading>Project: {project?.name}</Heading>
+      <Heading>Project: {project.name}</Heading>
 
       <TableContainer maxW={800} wordBreak="normal" whiteSpace="normal">
         <Table variant="striped" colorScheme="teal">
@@ -29,33 +29,30 @@ const ProjectTable = ({ project }: { project: ProjectValues }) => {
               <Td>
                 <b>Goal</b>
               </Td>
-              <Td>{project?.goal}</Td>
+              <Td>{project.goal}</Td>
             </Tr>
             <Tr>
               <Td>
                 <b>Champion</b>
               </Td>
-              <Td>{project?.champion}</Td>
+              <Td>{project.champion}</Td>
             </Tr>
             <Tr>
               <Td>
                 <b>Owner</b>
               </Td>
-              <Td>{project?.owner}</Td>
+              <Td>{project.owner}</Td>
             </Tr>
             <Tr>
               <Td>
                 <b>Habit schedule template</b>
               </Td>
               <Td>
-                {project?.habitsScheduleTemplate.length > 0
-                  ? `${project?.habitsScheduleTemplate.length} scheduled habits(s) in template`
-                  : "No scheduled habits"}
                 <HDLinkButton
                   ml={2}
                   href={`/dashboard/projects/${project.id}/template`}
                 >
-                  View
+                  {project.habitsScheduleTemplate ? "View" : "Create"}
                 </HDLinkButton>
               </Td>
             </Tr>
@@ -64,9 +61,10 @@ const ProjectTable = ({ project }: { project: ProjectValues }) => {
                 <b>Admins</b>
               </Td>
               <Td>
-                {project?.adminEmails.map((email) => {
-                  return <span key={email}>{email}</span>;
-                })}
+                {project.adminEmails &&
+                  project.adminEmails.map((email) => {
+                    return <span key={email}>{email}</span>;
+                  })}
               </Td>
             </Tr>
           </Tbody>

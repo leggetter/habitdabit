@@ -27,7 +27,7 @@ export interface IWeeklyHabitTemplate {
   days: Array<DailyHabitTemplate>;
 }
 
-class WeeklyHabitTemplate {
+class WeeklyHabitTemplate implements IWeeklyHabitTemplate {
   @Field(TigrisDataTypes.ARRAY, { elements: DailyHabitTemplate })
   days: Array<DailyHabitTemplate> = [];
 }
@@ -81,7 +81,7 @@ export class Project {
   @Field(TigrisDataTypes.DATE_TIME)
   startDate!: Date;
 
-  @Field(TigrisDataTypes.OBJECT, { elements: WeeklyHabitTemplate })
+  @Field()
   habitsScheduleTemplate?: WeeklyHabitTemplate;
 
   // @Field(TigrisDataTypes.OBJECT, { elements: ScheduledHabits })
